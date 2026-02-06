@@ -1,4 +1,4 @@
-#docker-image.yml
+# docker-image.yml
 name: CI docker
 
 on:
@@ -18,29 +18,51 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Commit changes
+
+      - name: Update README (hidden CI log) + data.txt
         run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          # Pastikan README ada
+          touch README.md
+
+          # Kalau marker belum ada → pasang section CI (sekali saja)
+          if ! grep -q "<!-- CI-LOG-START -->" README.md; then
+            cat << 'EOF' >> README.md
+            
+
+            ## CI Logs
+
+            <details>
+            <summary><b>Log otomatis (klik untuk buka)</b></summary>
+
+            <!-- CI-LOG-START -->
+            <!-- CI-LOG-END -->
+
+            </details>
+            EOF
+          fi
+
+          # Append log ke dalam section tersembunyi
           for INSER in {1..2}; do
             sleep 1
             HOURS=$(date +%H%M)
-            echo $HOURS $INSER >> README.md
-            git config user.name "github-actions"
-            git config user.email "github-actions@github.com"
-
-            if [ -n "$(git status --porcelain)" ]; then
-              git add README.md
-              git commit -m "ci: sync data"
-              git push
-            else
-              echo "No changes to commit"
-            fi
+            sed -i "/<!-- CI-LOG-START -->/a\\$HOURS $INSER" README.md
           done
+
+          # Update data.txt (keep last 10 lines)
           touch data.txt
           mv data.txt data.txt.tmp
-          echo $(date "+%H:%M") >> data.txt.tmp
+          echo "$(date '+%H:%M')" >> data.txt.tmp
           tail -n 10 data.txt.tmp > data.txt
+          rm -f data.txt.tmp
 
-          git add data.txt
-          git commit -m "ci: data"
-          git push
-          
+          # Commit kalau ada perubahan
+          if [ -n "$(git status --porcelain)" ]; then
+            git add README.md data.txt
+            git commit -m "ci: update hidden log & data"
+            git push
+          else
+            echo "No changes to commit"
+          fi
