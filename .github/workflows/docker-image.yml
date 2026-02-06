@@ -21,42 +21,31 @@ jobs:
 
       - name: Update README (hidden CI log) + data.txt
         run: |
+          set -e
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          # Pastikan README ada
+          # Pastikan file ada
           touch README.md
+          touch data.txt
 
-          # Kalau marker belum ada → pasang section CI (sekali saja)
+          # Pasang section CI Logs (sekali saja)
           if ! grep -q "<!-- CI-LOG-START -->" README.md; then
-            cat << 'EOF' >> README.md
-            
-
-            ## CI Logs
-
-            <details>
-            <summary><b>Log otomatis (klik untuk buka)</b></summary>
-
-            <!-- CI-LOG-START -->
-            <!-- CI-LOG-END -->
-
-            </details>
-            EOF
+            printf "\n## CI Logs\n\n<details>\n<summary><b>Log otomatis (klik untuk buka)</b></summary>\n\n<!-- CI-LOG-START -->\n<!-- CI-LOG-END -->\n\n</details>\n" >> README.md
           fi
 
-          # Append log ke dalam section tersembunyi
-          for INSER in {1..2}; do
+          # Tambahkan log ke dalam section tersembunyi
+          for INSER in 1 2; do
             sleep 1
             HOURS=$(date +%H%M)
             sed -i "/<!-- CI-LOG-START -->/a\\$HOURS $INSER" README.md
           done
 
-          # Update data.txt (keep last 10 lines)
-          touch data.txt
-          mv data.txt data.txt.tmp
-          echo "$(date '+%H:%M')" >> data.txt.tmp
-          tail -n 10 data.txt.tmp > data.txt
-          rm -f data.txt.tmp
+          # Update data.txt (simpan 10 baris terakhir)
+          echo "$(date '+%H:%M')" >> data.txt
+          tail -n 10 data.txt > data.txt.tmp
+          mv data.txt.tmp data.txt
 
           # Commit kalau ada perubahan
           if [ -n "$(git status --porcelain)" ]; then
