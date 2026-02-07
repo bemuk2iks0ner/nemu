@@ -1,4 +1,4 @@
-# docker-image.yml
+#docker-image.yml
 name: CI docker
 
 on:
@@ -40,6 +40,9 @@ jobs:
             sleep 1
             HOURS=$(date +%H%M)
             sed -i "/<!-- CI-LOG-START -->/a\\$HOURS $INSER" README.md
+            git add README.md
+            git commit -m "ci: update hidden log & data"
+            git push
           done
 
           # Update data.txt (simpan 10 baris terakhir)
@@ -47,11 +50,7 @@ jobs:
           tail -n 10 data.txt > data.txt.tmp
           mv data.txt.tmp data.txt
 
-          # Commit kalau ada perubahan
-          if [ -n "$(git status --porcelain)" ]; then
-            git add README.md data.txt
-            git commit -m "ci: update hidden log & data"
-            git push
-          else
-            echo "No changes to commit"
-          fi
+          git add data.txt
+          git commit -m "ci: data"
+          git push
+          
